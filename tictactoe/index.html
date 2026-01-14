@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tic Tac Toe Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>❌</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1f2e;
+            color: white;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .screen {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Menu Screen Styles */
+        #menu-screen h2 {
+            font-size: 48px;
+            margin-bottom: 30px;
+        }
+
+        #menu-screen p {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .mode-btn {
+            background: linear-gradient(135deg, #00d4ff, #7b68ee);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .mode-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #7b68ee, #00d4ff);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+
+        .match-selection {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .match-btn {
+            background-color: #2a3142;
+            border: 2px solid #3a4254;
+            color: white;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .match-btn:hover {
+            background-color: #3a4254;
+        }
+
+        .match-btn.active {
+            background-color: #00d4ff;
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px #00d4ff;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #00d4ff, #7b68ee);
+            border: none;
+            color: white;
+            padding: 15px 60px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: transform 0.2s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Game Board Styles */
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+        }
+
+        .score {
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #2a3142;
+            transition: all 0.3s;
+        }
+
+        .score.active {
+            box-shadow: 0 0 20px #00d4ff;
+            border: 2px solid #00d4ff;
+        }
+
+        .score-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .status-bar {
+            background: linear-gradient(135deg, #2a3142, #3a4254);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #3a4254;
+        }
+
+        #status-message {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin: 0;
+        }
+
+        .winner-announcement {
+            background: linear-gradient(135deg, #00d4ff, #7b68ee);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .winner-announcement h2 {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .winner-announcement p {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin: 0 auto 30px;
+        }
+
+        .cell {
+            background-color: #2a3142;
+            border: 2px solid #3a4254;
+            border-radius: 15px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cell:hover {
+            background-color: #3a4254;
+            transform: scale(1.05);
+        }
+
+        .cell.x {
+            color: #00d4ff;
+        }
+
+        .cell.o {
+            color: #d946ef;
+        }
+
+        #reset-btn {
+            background: linear-gradient(135deg, #00d4ff, #7b68ee);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        #reset-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #1a1f2e;
+            padding: 15px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            border-top: 1px solid #3a4254;
+        }
+    </style>
+</head>
+<body>
+  
+    <!-- Menu Screen -->
+    <div id="menu-screen" class="screen">
+        <h2>TIC TAC TOE</h2>
+        <p>SELECT OPPONENT</p>
+        <div class="mode-buttons">
+            <button id="ai-mode" class="mode-btn">VS ENGINE</button>
+            <button id="pvp-mode" class="mode-btn">LOCAL PVP</button>
+        </div>
+        
+        <p style="margin-top: 30px; color: #6b7280;">MATCHES TO PLAY</p>
+        <div class="match-selection">
+            <button class="match-btn" data-matches="1">1</button>
+            <button class="match-btn active" data-matches="3">3</button>
+            <button class="match-btn" data-matches="5">5</button>
+            <button class="match-btn" data-matches="10">10</button>
+        </div>
+        
+        <button id="start-btn" class="start-btn">START GAME</button>
+    </div>
+
+    <!-- Game Screen (hidden initially) -->
+    <div id="game-screen" class="screen hidden">
+        <div class="score-board">
+            <div id="player1-score" class="score">
+                <h3>Player 1</h3>
+                <p class="score-number">0</p>
+            </div>
+            <div id="player2-score" class="score">
+                <h3>Player 2</h3>
+                <p class="score-number">0</p>
+            </div>
+        </div>
+        
+        <div id="status-bar" class="status-bar">
+            <p id="status-message">Player 1's turn</p>
+        </div>
+    
+        <div id="game-board" class="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <button id="reset-btn">RESET GAME</button>
+    </div>
+    
+    <footer class="footer">
+        <p>CREATED BY NEOWORKERS 2026</p>
+    </footer>
+    
+    <script src="game.js"></script>
+</body>
+</html>
