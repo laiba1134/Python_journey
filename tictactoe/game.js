@@ -5,7 +5,7 @@ let gameMode = ""; // "ai" or "pvp"
 let gameActive = true;
 let matchesToPlay = 3;
 let currentMatch = 1;
-let roundsPlayed = 0;  // ADD THIS LINE
+let roundsPlayed = 0;  
 let player1Wins = 0;
 let player2Wins = 0;
 let selectedMode = null;
@@ -98,7 +98,7 @@ function handleCellClick(e) {
 }
 
 if (checkDraw()) {
-    roundsPlayed++;  // ADD THIS
+    roundsPlayed++;  
     if (isMatchOver()) {
         showFinalWinner();
     } else {
@@ -253,7 +253,7 @@ function backToMenu() {
     player1Wins = 0;
     player2Wins = 0;
     currentMatch = 1;
-    roundsPlayed = 0;  // ADD THIS LINE
+    roundsPlayed = 0;  
     
     cells.forEach(cell => {
         cell.textContent = "";
@@ -334,9 +334,6 @@ function aiMove() {
     const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
     makeMove(randomIndex, aiPlayer);
     checkGameEnd();
-}
-
-// Check game end after AI move
 // Check game end after AI move
 function checkGameEnd() {
     if (checkWinner("O")) {
@@ -354,7 +351,7 @@ function checkGameEnd() {
     }
     
     if (checkDraw()) {
-        roundsPlayed++;  // ADD THIS
+        roundsPlayed++; 
         if (isMatchOver()) {
             showFinalWinner();
         } else {
