@@ -328,7 +328,7 @@ function aiMove() {
             return;
         }
     }
-    
+}
     // 5. Pick any remaining cell
     const emptyCells = board.map((cell, index) => cell === "" ? index : null).filter(i => i !== null);
     const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
@@ -365,6 +365,5 @@ function checkGameEnd() {
     updateTurnIndicator();
     updateStatusMessage();
 }
-
 // Reset button
 resetBtn.addEventListener("click", backToMenu);
