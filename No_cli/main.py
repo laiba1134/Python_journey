@@ -8,7 +8,6 @@ manager = taskmanager()
 # Pydantic schema for task creation
 class TaskCreate(BaseModel):
     name: str
-
 # --- Add a new task ---
 @app.post("/tasks")
 def add_task(task: TaskCreate):

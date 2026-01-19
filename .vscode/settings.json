@@ -1,0 +1,48 @@
+{
+    // Security & Trust
+    "security.workspace.trust.untrustedFiles": "open",
+    
+    // Git Settings
+    "git.openRepositoryInParentFolders": "never",
+    
+    // Editor Settings
+    "editor.mouseWheelZoom": true,
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "workbench.editor.empty.hint": "hidden",
+    "workbench.iconTheme": "vs-seti",
+    
+    // File Associations
+    "files.associations": {
+        "iostream": "cpp"
+    },
+    
+    // Language-specific Settings
+    "[c]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
+    },
+    "[cpp]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
+    },
+    
+    // Python Settings
+    "python.createEnvironment.trigger": "off",
+    "python.defaultInterpreterPath": "C:\\Python314\\python.exe",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.autoImportCompletions": true,
+    
+    // Extension Settings
+    "liveServer.settings.donotShowInfoMsg": true,
+    
+    // Chat/Copilot Settings (remove if causing issues)
+    "chat.instructionsFilesLocations": {
+        ".github/instructions": true,
+        "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\postman-collections-post-response.instructions.md": true,
+        "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\postman-collections-pre-request.instructions.md": true,
+        "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\postman-folder-post-response.instructions.md": true,
+        "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\postman-folder-pre-request.instructions.md": true,
+        "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\postman-http-request-post-response.instructions.md": true,
+        "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\postman-http-request-pre-request.instructions.md": true
+    }
+}
