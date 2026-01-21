@@ -61,13 +61,18 @@ export const db = {
   async login(username: string, password: string): Promise<User | null> {
     try {
       console.log('Attempting login with:', { username, password: '***' }); // Debug log
-      const user = await apiCall('/auth/login', {
+      const response = await apiCall('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
-      console.log('Login successful:', user); // Debug log
+      console.log('Raw API response:', response); // Debug log
+
       // Convert snake_case to camelCase
-      return toCamelCase(user);
+      const user = toCamelCase(response);
+      console.log('Converted user:', user); // Debug log
+      console.log('User role:', user.role, 'Type:', typeof user.role); // Debug log
+
+      return user;
     } catch (error) {
       console.error('Login failed:', error);
       alert('Login failed: ' + (error as Error).message);

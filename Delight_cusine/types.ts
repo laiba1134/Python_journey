@@ -1,30 +1,14 @@
 export enum UserRole {
-  ADMIN = 'ADMIN',
-  CUSTOMER = 'CUSTOMER'
-}
-
-export enum OrderStatus {
-  PLACED = 'Order Placed',
-  PREPARING = 'Preparing',
-  OUT_FOR_DELIVERY = 'Out for Delivery',
-  DELIVERED = 'Delivered'
-}
-
-export enum PaymentMethod {
-  CARD = 'Card',
-  COD = 'Cash on Delivery'
-}
-
-export enum OrderMode {
-  DELIVERY = 'Delivery',
-  PICKUP = 'Pickup'
+  ADMIN = 'admin',
+  CUSTOMER = 'customer'
 }
 
 export interface User {
   id: string;
+  username: string;
   email: string;
-  password?: string;
-  role: UserRole;
+  role: UserRole | string; // Allow both enum and string
+  createdAt: string;
 }
 
 export interface MenuItem {
@@ -33,15 +17,35 @@ export interface MenuItem {
   description: string;
   price: number;
   category: string;
-  is_available: boolean;
-  is_deleted?: boolean; // Soft delete support
-  image_url: string;
+  image: string;
+  available: boolean;
+  is_deleted: boolean;
 }
 
 export interface CartItem {
   id: string;
   menuItem: MenuItem;
   quantity: number;
+}
+
+export enum OrderStatus {
+  PLACED = 'placed',
+  PREPARING = 'preparing',
+  READY = 'ready',
+  DELIVERED = 'delivered',
+  CANCELLED = 'cancelled'
+}
+
+export enum PaymentMethod {
+  CASH = 'cash',
+  CARD = 'card',
+  ONLINE = 'online'
+}
+
+export enum OrderMode {
+  DINE_IN = 'dine_in',
+  TAKEAWAY = 'takeaway',
+  DELIVERY = 'delivery'
 }
 
 export interface Order {
