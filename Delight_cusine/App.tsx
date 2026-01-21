@@ -139,11 +139,14 @@ const App: React.FC = () => {
         )}
 
         {view === 'login' && (
-          <LoginPage onLogin={async (username, password) => {
-            const user = await db.login(username, password);
+          <LoginPage onLogin={async (usernameOrEmail, password) => {
+            const user = await db.login(usernameOrEmail, password);
+            console.log('Logged in user:', user); // Debug log
             if (user) {
               setCurrentUser(user);
               setView(user.role === UserRole.ADMIN ? 'admin' : 'menu');
+            } else {
+              alert('Invalid credentials or access denied.');
             }
           }} />
         )}
@@ -157,15 +160,33 @@ const App: React.FC = () => {
         )}
 
         {view === 'admin' && (
-          <AdminDashboard
-            items={menuItems}
-            orders={orders}
-            restaurantStatus={restaurantStatus}
-            onToggleStatus={() => setRestaurantStatus(prev => ({ isOpen: !prev.isOpen }))}
-            onUpdateOrder={updateOrderStatus}
-            onToggleItem={toggleAvailability}
-            onUpdateMenuItems={handleUpdateMenuItems}
-          />
+          <>
+            {(currentUser?.role === UserRole.ADMIN || (currentUser?.role as string) === 'admin') ? (
+              <AdminDashboard
+                items={menuItems}
+                orders={orders}
+                restaurantStatus={restaurantStatus}
+                onToggleStatus={() => setRestaurantStatus(prev => ({ isOpen: !prev.isOpen }))}
+                onUpdateOrder={updateOrderStatus}
+                onToggleItem={toggleAvailability}
+                onUpdateMenuItems={handleUpdateMenuItems}
+              />
+            ) : (
+              <div className="text-center py-16">
+                <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-6 rounded-2xl inline-block">
+                  <h3 className="text-2xl font-black mb-2">ACCESS DENIED</h3>
+                  <p className="text-sm">You do not have permission to access the admin dashboard.</p>
+                  <p className="text-xs mt-2 opacity-50">Current role: {currentUser?.role || 'none'}</p>
+                  <button
+                    onClick={() => setView('menu')}
+                    className="mt-4 honey-gradient text-black px-6 py-2 rounded-xl font-black text-xs"
+                  >
+                    RETURN TO MENU
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
 

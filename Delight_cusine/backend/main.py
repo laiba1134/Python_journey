@@ -39,6 +39,7 @@ class OrderMode(str, Enum):
 class LoginRequest(BaseModel):
     username: str
     password: str
+    requested_role: Optional[str] = None
 
 class UserCreate(BaseModel):
     username: str
@@ -315,6 +316,14 @@ def login(credentials: LoginRequest):
 
     if not user or not pwd_context.verify(credentials.password, user['hashed_password']):
         raise HTTPException(status_code=401, detail="Invalid email/username or password")
+
+    # Verify role matches if requested_role is provided
+    if credentials.requested_role:
+        if user['role'] != credentials.requested_role:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Access denied. This account is not authorized for {credentials.requested_role} access."
+            )
 
     return UserResponse(
         id=user['id'],
