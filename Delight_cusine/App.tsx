@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, MenuItem, CartItem, Order, OrderStatus, RestaurantStatus, PaymentMethod, OrderMode } from './types';
 import { db } from './db';
@@ -9,17 +8,6 @@ import AdminDashboard from './components/AdminDashboard';
 import CartPage from './components/CartPage';
 import OrdersPage from './components/OrdersPage';
 
-const INITIAL_MENU: MenuItem[] = [
-  { id: '1', name: 'Delight Truffle Burger', description: 'Double beef patty, truffle mayo, and a drizzle of spicy honey.', price: 18.50, category: 'Burgers', is_available: true, image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80' },
-  { id: '2', name: 'Golden Glazed Wings', description: 'Crispy wings tossed in a signature honey-soy glaze.', price: 12.00, category: 'Appetizers', is_available: true, image_url: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=800&q=80' },
-  { id: '3', name: 'Seasonal Root Salad', description: 'Seasonal vegetables, goat cheese, and honey balsamic vinaigrette.', price: 14.50, category: 'Salads', is_available: true, image_url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80' },
-  { id: '4', name: 'Spicy Delight Pizza', description: 'Hot salami, mozzarella, and a generous honey swirl.', price: 21.00, category: 'Main Courses', is_available: true, image_url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80' },
-  { id: '5', name: 'Artisan Charcuterie', description: 'Premium cured meats, honeycomb, and aged cheeses.', price: 24.00, category: 'Appetizers', is_available: true, image_url: 'https://images.unsplash.com/photo-1559183030-89d9333bb3c5?auto=format&fit=crop&w=800&q=80' },
-  { id: '6', name: 'Wildflower Pasta', description: 'Handmade pappardelle with butter, sage, and honey-parmesan tuile.', price: 19.50, category: 'Main Courses', is_available: true, image_url: 'https://images.unsplash.com/photo-1473093226795-af9932fe5855?auto=format&fit=crop&w=800&q=80' },
-  { id: '7', name: 'Smoked Salmon Toast', description: 'Sourdough, cream cheese, capers, and a hint of citrus honey.', price: 16.00, category: 'Breakfast', is_available: true, image_url: 'https://images.unsplash.com/photo-1484723088339-17e83d908c51?auto=format&fit=crop&w=800&q=80' },
-  { id: '8', name: 'Lavender Cheesecake', description: 'Velvety cheesecake infused with local lavender and honey.', price: 9.50, category: 'Desserts', is_available: true, image_url: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80' },
-];
-
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [view, setView] = useState<'menu' | 'login' | 'cart' | 'admin' | 'orders'>('menu');
@@ -27,24 +15,37 @@ const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [restaurantStatus, setRestaurantStatus] = useState<RestaurantStatus>({ isOpen: true });
+  const [loading, setLoading] = useState(true);
 
+  // Load initial data from backend
   useEffect(() => {
-    const savedMenu = db.getMenu();
-    if (savedMenu.length === 0) {
-      db.saveMenu(INITIAL_MENU);
-      setMenuItems(INITIAL_MENU);
-    } else {
-      setMenuItems(savedMenu);
-    }
-    setOrders(db.getOrders());
-    const savedStatus = localStorage.getItem('restaurantStatus');
-    if (savedStatus) setRestaurantStatus(JSON.parse(savedStatus));
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) setCart(JSON.parse(savedCart));
+    const loadData = async () => {
+      try {
+        const menu = await db.getMenu();
+        setMenuItems(menu);
+
+        const fetchedOrders = await db.getOrders();
+        setOrders(fetchedOrders);
+
+        const status = await db.getRestaurantStatus();
+        setRestaurantStatus(status);
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  useEffect(() => { localStorage.setItem('cart', JSON.stringify(cart)); }, [cart]);
-  useEffect(() => { localStorage.setItem('restaurantStatus', JSON.stringify(restaurantStatus)); }, [restaurantStatus]);
+  // Save restaurant status to backend
+  useEffect(() => {
+    if (!loading) {
+      db.saveRestaurantStatus(restaurantStatus);
+    }
+  }, [restaurantStatus, loading]);
 
   const addToCart = (item: MenuItem) => {
     if (!restaurantStatus.isOpen) return;
@@ -57,9 +58,11 @@ const App: React.FC = () => {
     });
   };
 
-  const removeFromCart = (id: string) => { setCart(prev => prev.filter(i => i.id !== id)); };
+  const removeFromCart = (id: string) => {
+    setCart(prev => prev.filter(i => i.id !== id));
+  };
 
-  const placeOrder = (payment: PaymentMethod, mode: OrderMode) => {
+  const placeOrder = async (payment: PaymentMethod, mode: OrderMode) => {
     if (!currentUser) return;
     const newOrder: Order = {
       id: Math.random().toString(36).substr(2, 6).toUpperCase(),
@@ -71,28 +74,43 @@ const App: React.FC = () => {
       orderMode: mode,
       timestamp: new Date().toLocaleString(),
     };
-    db.saveOrder(newOrder);
-    setOrders(db.getOrders());
+
+    await db.saveOrder(newOrder);
+    const fetchedOrders = await db.getOrders();
+    setOrders(fetchedOrders);
     setCart([]);
     setView('orders');
   };
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    db.updateOrderStatus(orderId, status);
-    setOrders(db.getOrders());
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    await db.updateOrderStatus(orderId, status);
+    const fetchedOrders = await db.getOrders();
+    setOrders(fetchedOrders);
   };
 
-  const handleUpdateMenuItems = (items: MenuItem[]) => {
+  const handleUpdateMenuItems = async (items: MenuItem[]) => {
     setMenuItems(items);
-    db.saveMenu(items);
+    // Update each item in the backend
+    for (const item of items) {
+      await db.updateMenuItem(item);
+    }
   };
 
-  const toggleAvailability = (itemId: string) => {
-    const updated = menuItems.map(i => i.id === itemId ? { ...i, is_available: !i.is_available } : i);
-    handleUpdateMenuItems(updated);
+  const toggleAvailability = async (itemId: string) => {
+    await db.toggleItemAvailability(itemId);
+    const menu = await db.getMenu();
+    setMenuItems(menu);
   };
 
   const activeMenuItems = menuItems.filter(item => !item.is_deleted);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <div className="text-amber-500 text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0a]">
@@ -121,7 +139,13 @@ const App: React.FC = () => {
         )}
 
         {view === 'login' && (
-          <LoginPage onLogin={(user) => { setCurrentUser(user); setView(user.role === UserRole.ADMIN ? 'admin' : 'menu'); }} />
+          <LoginPage onLogin={async (username, password) => {
+            const user = await db.login(username, password);
+            if (user) {
+              setCurrentUser(user);
+              setView(user.role === UserRole.ADMIN ? 'admin' : 'menu');
+            }
+          }} />
         )}
 
         {view === 'cart' && (
@@ -156,7 +180,6 @@ const App: React.FC = () => {
               <p className="text-white/40 text-sm leading-relaxed">
                 Elevating the art of dining with premium artisanal flavors delivered straight to your doorstep.
               </p>
-              {/* SOCIAL MEDIA LINKS */}
               <div className="flex items-center gap-4 justify-center md:justify-start pt-2">
                 <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-amber-500 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
