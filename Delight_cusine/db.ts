@@ -32,46 +32,62 @@ function toCamelCase(obj: any): any {
 
 // Helper function for API calls
 async function apiCall(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-    throw new Error(error.detail || 'Request failed');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+      console.error('API Error:', error);
+      throw new Error(error.detail || 'Request failed');
+    }
+
+    const data = await response.json();
+    console.log('API Response:', data); // Debug log
+    return data;
+  } catch (error) {
+    console.error('Fetch Error:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export const db = {
   // Authentication
   async login(username: string, password: string): Promise<User | null> {
     try {
+      console.log('Attempting login with:', { username, password: '***' }); // Debug log
       const user = await apiCall('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
-      return user;
+      console.log('Login successful:', user); // Debug log
+      // Convert snake_case to camelCase
+      return toCamelCase(user);
     } catch (error) {
       console.error('Login failed:', error);
+      alert('Login failed: ' + (error as Error).message);
       return null;
     }
   },
 
-  async register(username: string, password: string, role: string): Promise<User | null> {
+  async register(username: string, email: string, password: string, role: string = 'customer'): Promise<User | null> {
     try {
+      console.log('Attempting registration with:', { username, email, role }); // Debug log
       const user = await apiCall('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ username, password, role }),
+        body: JSON.stringify({ username, email, password, role }),
       });
-      return user;
+      console.log('Registration successful:', user); // Debug log
+      // Convert snake_case to camelCase
+      return toCamelCase(user);
     } catch (error) {
       console.error('Registration failed:', error);
+      alert('Registration failed: ' + (error as Error).message);
       return null;
     }
   },
@@ -161,7 +177,8 @@ export const db = {
   // Restaurant status operations
   async getRestaurantStatus(): Promise<RestaurantStatus> {
     try {
-      return await apiCall('/restaurant/status');
+      const data = await apiCall('/restaurant/status');
+      return toCamelCase(data);
     } catch (error) {
       console.error('Failed to fetch restaurant status:', error);
       return { isOpen: true };
@@ -172,7 +189,7 @@ export const db = {
     try {
       await apiCall('/restaurant/status', {
         method: 'PUT',
-        body: JSON.stringify({ is_open: status.isOpen }),
+        body: JSON.stringify(toSnakeCase(status)),
       });
     } catch (error) {
       console.error('Failed to save restaurant status:', error);
