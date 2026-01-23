@@ -37,7 +37,7 @@
     "category": "Appetizers",
     "image": "https://images.unsplash.com/photo-1608039829572-78524f79c4c7",
     "available": true,
-    "is_deleted": false
+    "is_deleted": true
   },
   {
     "id": "item_005",
@@ -57,6 +57,6 @@
     "category": "Pasta",
     "image": "https://images.unsplash.com/photo-1612874742237-6526221588e3",
     "available": true,
-    "is_deleted": false
+    "is_deleted": true
   }
 ]
