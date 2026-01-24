@@ -90,10 +90,8 @@ const App: React.FC = () => {
 
   const handleUpdateMenuItems = async (items: MenuItem[]) => {
     setMenuItems(items);
-    // Update each item in the backend
-    for (const item of items) {
-      await db.updateMenuItem(item);
-    }
+    // Batch update all items in the backend
+    await db.updateMultipleMenuItems(items);
   };
 
   const toggleAvailability = async (itemId: string) => {

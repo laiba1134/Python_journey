@@ -22,8 +22,13 @@ function toCamelCase(obj: any): any {
     return obj.map(toCamelCase);
   } else if (obj !== null && typeof obj === 'object') {
     return Object.keys(obj).reduce((acc, key) => {
-      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-      acc[camelKey] = toCamelCase(obj[key]);
+      // Special handling for is_deleted - keep it as is
+      if (key === 'is_deleted') {
+        acc['is_deleted'] = obj[key];
+      } else {
+        const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+        acc[camelKey] = toCamelCase(obj[key]);
+      }
       return acc;
     }, {} as any);
   }
@@ -116,6 +121,24 @@ export const db = {
       });
     } catch (error) {
       console.error('Failed to update menu item:', error);
+    }
+  },
+
+  async updateMultipleMenuItems(items: MenuItem[]): Promise<void> {
+    try {
+      console.log('Updating multiple items:', items.length);
+      console.log('Items being sent (before conversion):', items);
+
+      // Don't convert - send items as-is since MenuItem already has the right format
+      const response = await apiCall('/menu/batch', {
+        method: 'PUT',
+        body: JSON.stringify(items),
+      });
+
+      console.log('Batch update response:', response);
+    } catch (error) {
+      console.error('Failed to batch update menu items:', error);
+      throw error;
     }
   },
 
