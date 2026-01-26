@@ -29,11 +29,11 @@ export interface CartItem {
 }
 
 export enum OrderStatus {
-  PLACED = 'placed',
-  PREPARING = 'preparing',
-  READY = 'ready',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled'
+  PLACED = "PLACED",
+  PREPARING = "PREPARING",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
+  DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED"
 }
 
 export enum PaymentMethod {
