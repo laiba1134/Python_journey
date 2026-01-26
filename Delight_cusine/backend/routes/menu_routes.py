@@ -15,16 +15,25 @@ menu_bp = Blueprint('menu', __name__)
 def get_menu_items():
     """
     Get all menu items (public endpoint)
+    By default, only shows non-deleted items
+    Admin can request deleted items with include_deleted=true
 
     Query parameters:
         - category: Filter by category (optional)
         - available: Filter by availability (optional, true/false)
+        - include_deleted: Include soft-deleted items (optional, admin only)
 
     Returns:
         200: List of menu items
     """
     try:
-        query = MenuItem.query
+        # Start with base query - exclude deleted items by default
+        query = MenuItem.query.filter_by(is_deleted=False)
+
+        # Admin can request to see deleted items
+        include_deleted = request.args.get('include_deleted', 'false').lower() == 'true'
+        if include_deleted:
+            query = MenuItem.query  # Show all items including deleted
 
         # Apply filters
         category = request.args.get('category')
@@ -60,7 +69,7 @@ def get_menu_item(item_id):
         404: Menu item not found
     """
     try:
-        menu_item = MenuItem.query.get(item_id)
+        menu_item = MenuItem.query.filter_by(id=item_id, is_deleted=False).first()
 
         if not menu_item:
             return jsonify({
@@ -125,7 +134,8 @@ def create_menu_item():
             price=price,
             category=data['category'],
             image_url=data.get('image_url'),
-            available=data.get('available', True)
+            available=data.get('available', True),
+            is_deleted=False
         )
 
         db.session.add(new_item)
@@ -210,12 +220,51 @@ def update_menu_item(item_id):
         }), 500
 
 
+@menu_bp.route('/<int:item_id>/toggle', methods=['PATCH'])
+@jwt_required()
+@admin_required
+def toggle_item_availability(item_id):
+    """
+    Toggle menu item availability (admin only)
+    This is separate from restaurant status - allows marking specific items as sold out
+
+    Returns:
+        200: Availability toggled successfully
+        404: Menu item not found
+        403: Admin privileges required
+    """
+    try:
+        menu_item = MenuItem.query.filter_by(id=item_id, is_deleted=False).first()
+
+        if not menu_item:
+            return jsonify({
+                'error': 'item_not_found',
+                'message': 'Menu item not found'
+            }), 404
+
+        menu_item.available = not menu_item.available
+        db.session.commit()
+
+        return jsonify({
+            'message': f'Item {"enabled" if menu_item.available else "disabled"} successfully',
+            'menu_item': menu_item.to_dict()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': 'toggle_failed',
+            'message': str(e)
+        }), 500
+
+
 @menu_bp.route('/<int:item_id>', methods=['DELETE'])
 @jwt_required()
 @admin_required
 def delete_menu_item(item_id):
     """
-    Delete a menu item (admin only)
+    Soft delete a menu item (admin only)
+    Item is marked as deleted but kept in database for history
 
     Returns:
         200: Menu item deleted successfully
@@ -231,7 +280,8 @@ def delete_menu_item(item_id):
                 'message': 'Menu item not found'
             }), 404
 
-        db.session.delete(menu_item)
+        # Soft delete - mark as deleted instead of removing from database
+        menu_item.is_deleted = True
         db.session.commit()
 
         return jsonify({
@@ -246,16 +296,53 @@ def delete_menu_item(item_id):
         }), 500
 
 
+@menu_bp.route('/<int:item_id>/restore', methods=['PATCH'])
+@jwt_required()
+@admin_required
+def restore_menu_item(item_id):
+    """
+    Restore a soft-deleted menu item (admin only)
+
+    Returns:
+        200: Menu item restored successfully
+        404: Menu item not found
+        403: Admin privileges required
+    """
+    try:
+        menu_item = MenuItem.query.filter_by(id=item_id, is_deleted=True).first()
+
+        if not menu_item:
+            return jsonify({
+                'error': 'item_not_found',
+                'message': 'Deleted menu item not found'
+            }), 404
+
+        menu_item.is_deleted = False
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Menu item restored successfully',
+            'menu_item': menu_item.to_dict()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': 'restore_failed',
+            'message': str(e)
+        }), 500
+
+
 @menu_bp.route('/categories', methods=['GET'])
 def get_categories():
     """
-    Get all unique menu categories
+    Get all unique menu categories (only from non-deleted items)
 
     Returns:
         200: List of categories
     """
     try:
-        categories = db.session.query(MenuItem.category).distinct().all()
+        categories = db.session.query(MenuItem.category).filter_by(is_deleted=False).distinct().all()
         category_list = [cat[0] for cat in categories]
 
         return jsonify({
