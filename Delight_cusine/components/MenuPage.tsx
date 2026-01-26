@@ -13,7 +13,11 @@ const MenuPage: React.FC<MenuPageProps> = ({ items, onAddToCart, isClosed, isLog
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
-  const categories = ['ALL', ...Array.from(new Set(items.map(item => item.category)))];
+  // Extract unique categories and capitalize them properly
+  const uniqueCategories = Array.from(new Set(items.map(item => item.category?.toLowerCase() || 'other')));
+  const categories = ['ALL', ...uniqueCategories.map(cat => cat.toUpperCase())];
+
+  console.log('Available categories:', categories); // Debug log
 
   const handleAddToCart = (item: MenuItem) => {
     if (!isLoggedIn) {
@@ -35,7 +39,8 @@ const MenuPage: React.FC<MenuPageProps> = ({ items, onAddToCart, isClosed, isLog
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'ALL' || item.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'ALL' ||
+      item.category?.toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -77,6 +82,11 @@ const MenuPage: React.FC<MenuPageProps> = ({ items, onAddToCart, isClosed, isLog
             </button>
           ))}
         </div>
+
+        {/* Category Stats */}
+        <div className="text-white/40 text-sm">
+          Showing {filteredItems.length} of {items.length} items
+        </div>
       </div>
 
       {/* Menu Items Grid */}
@@ -98,6 +108,10 @@ const MenuPage: React.FC<MenuPageProps> = ({ items, onAddToCart, isClosed, isLog
                   src={item.image}
                   alt={item.name}
                   className={`w-full h-full object-cover ${unavailable ? 'grayscale' : ''}`}
+                  onError={(e) => {
+                    // Fallback image if image fails to load
+                    e.currentTarget.src = 'https://via.placeholder.com/400x300/0a0a0a/fbbf24?text=' + encodeURIComponent(item.name);
+                  }}
                 />
 
                 {/* Category Badge */}

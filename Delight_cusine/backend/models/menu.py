@@ -17,6 +17,7 @@ class MenuItem(db.Model):
     category = db.Column(db.String(50), nullable=False)  # e.g., 'appetizer', 'main', 'dessert', 'beverage'
     image_url = db.Column(db.String(255))
     available = db.Column(db.Boolean, default=True)
+    is_deleted = db.Column(db.Boolean, default=False)  # Soft delete flag
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -35,6 +36,7 @@ class MenuItem(db.Model):
             'category': self.category,
             'image_url': self.image_url,
             'available': self.available,
+            'is_deleted': self.is_deleted,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
