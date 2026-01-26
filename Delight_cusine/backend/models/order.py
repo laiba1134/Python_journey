@@ -12,10 +12,12 @@ class Order(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    status = db.Column(db.String(20), nullable=False, default='pending')  # 'pending', 'preparing', 'delivered', 'cancelled'
+    status = db.Column(db.String(20), nullable=False, default='PLACED')  # 'PLACED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'
     total_amount = db.Column(db.Float, nullable=False)
     delivery_address = db.Column(db.Text)
     notes = db.Column(db.Text)
+    order_mode = db.Column(db.String(50), default='Delivery')  # 'Delivery' or 'Pickup'
+    payment_method = db.Column(db.String(50), default='Cash on Delivery')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -30,15 +32,18 @@ class Order(db.Model):
             include_items: Whether to include order items
 
         Returns:
-            Dictionary representation of order
+            Dictionary representation of order (frontend-compatible format)
         """
         data = {
-            'id': self.id,
+            'id': str(self.id),  # Convert to string for frontend
             'user_id': self.user_id,
             'status': self.status,
-            'total_amount': self.total_amount,
+            'total': self.total_amount,  # Frontend expects 'total' not 'total_amount'
             'delivery_address': self.delivery_address,
             'notes': self.notes,
+            'timestamp': self.created_at.strftime('%Y-%m-%d %H:%M'),  # Formatted timestamp
+            'orderMode': self.order_mode,  # camelCase for frontend
+            'paymentMethod': self.payment_method,  # camelCase for frontend
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
@@ -71,16 +76,17 @@ class OrderItem(db.Model):
         Convert order item to dictionary
 
         Returns:
-            Dictionary representation of order item
+            Dictionary representation of order item (frontend-compatible format)
         """
         return {
-            'id': self.id,
+            'id': str(self.id),  # Convert to string for frontend
             'order_id': self.order_id,
-            'menu_item_id': self.menu_item_id,
-            'menu_item_name': self.menu_item.name if self.menu_item else None,
             'quantity': self.quantity,
-            'price': self.price,
-            'subtotal': self.quantity * self.price
+            'menuItem': {  # Nested object for frontend
+                'id': self.menu_item_id,
+                'name': self.menu_item.name if self.menu_item else 'Unknown Item',
+                'price': self.price
+            }
         }
 
     def __repr__(self):

@@ -2,8 +2,7 @@
 Models package
 Exports all database models
 """
-from models.user import User
-from models.menu import MenuItem
-from models.order import Order, OrderItem
+# Import models to make them available when package is imported
+# This ensures all models are registered with SQLAlchemy
 
 __all__ = ['User', 'MenuItem', 'Order', 'OrderItem']

@@ -89,7 +89,9 @@ def create_order():
             total_amount=total_amount,
             delivery_address=data.get('delivery_address'),
             notes=data.get('notes'),
-            status='pending'
+            order_mode=data.get('order_mode', 'Delivery'),
+            payment_method=data.get('payment_method', 'Cash on Delivery'),
+            status='PLACED'
         )
 
         db.session.add(new_order)
@@ -267,7 +269,7 @@ def update_order_status(order_id):
         new_status = data['status']
 
         # Validate status
-        valid_statuses = ['pending', 'preparing', 'delivered', 'cancelled']
+        valid_statuses = ['PLACED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']
         if new_status not in valid_statuses:
             return jsonify({
                 'error': 'invalid_status',
@@ -321,14 +323,14 @@ def cancel_order(order_id):
                 'message': 'Not authorized to cancel this order'
             }), 403
 
-        # Only pending orders can be cancelled by users
-        if order.status != 'pending' and user.role != 'admin':
+        # Only PLACED orders can be cancelled by users
+        if order.status != 'PLACED' and user.role != 'admin':
             return jsonify({
                 'error': 'cannot_cancel',
-                'message': 'Only pending orders can be cancelled'
+                'message': 'Only orders with PLACED status can be cancelled'
             }), 400
 
-        order.status = 'cancelled'
+        order.status = 'CANCELLED'
         db.session.commit()
 
         return jsonify({
