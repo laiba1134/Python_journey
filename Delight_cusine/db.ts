@@ -1,6 +1,7 @@
 import { User, MenuItem, Order, RestaurantStatus, OrderStatus } from './types';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+// Use environment variable or default to Flask's port 5000
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // Helper to handle camelCase to snake_case conversion
 function toSnakeCase(obj: any): any {

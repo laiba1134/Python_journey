@@ -13,6 +13,7 @@ from routes.auth_routes import auth_bp
 from routes.menu_routes import menu_bp
 from routes.order_routes import order_bp
 from config.config import Config
+from seed_data import seed_all  # Import the seed function
 
 # Load environment variables
 load_dotenv()
@@ -48,10 +49,10 @@ def create_app(config_class=Config):
     app.register_blueprint(menu_bp, url_prefix='/api/menu')
     app.register_blueprint(order_bp, url_prefix='/api/orders')
 
-    # Create database tables
+    # Create database tables and seed data
     with app.app_context():
         db.create_all()
-        _create_default_admin()
+        seed_all()  # Seed all initial data
 
     @app.route('/api/health', methods=['GET'])
     def health_check():
@@ -60,22 +61,6 @@ def create_app(config_class=Config):
 
     return app
 
-def _create_default_admin():
-    """Create default admin user if none exists"""
-    from models.user import User
-    from werkzeug.security import generate_password_hash
-
-    admin = User.query.filter_by(email='admin@delightcuisine.com').first()
-    if not admin:
-        admin = User(
-            email='admin@delightcuisine.com',
-            password=generate_password_hash('admin123', method='pbkdf2:sha256'),
-            name='Admin User',
-            role='admin'
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print("✓ Default admin user created (admin@delightcuisine.com / admin123)")
 
 if __name__ == '__main__':
     app = create_app()
