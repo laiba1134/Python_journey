@@ -12,8 +12,10 @@ from extensions.jwt import jwt
 from routes.auth_routes import auth_bp
 from routes.menu_routes import menu_bp
 from routes.order_routes import order_bp
+from routes.restaurant_routes import restaurant_bp
 from config.config import Config
-from seed_data import seed_all  # Import the seed function
+from seed_data import seed_all
+# Import the seed function
 
 # Load environment variables
 load_dotenv()
@@ -48,6 +50,7 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(menu_bp, url_prefix='/api/menu')
     app.register_blueprint(order_bp, url_prefix='/api/orders')
+    app.register_blueprint(restaurant_bp, url_prefix='/api/restaurant')
 
     # Create database tables and seed data
     with app.app_context():

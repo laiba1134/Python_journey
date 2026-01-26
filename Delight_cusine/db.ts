@@ -1,7 +1,7 @@
 import { User, MenuItem, Order, RestaurantStatus, OrderStatus } from './types';
 
-// Use environment variable or default to Flask's port 5000
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// Flask backend API URL
+const API_BASE_URL = 'http://localhost:5000/api';
 
 // Helper to handle camelCase to snake_case conversion
 function toSnakeCase(obj: any): any {
@@ -108,7 +108,18 @@ export const db = {
     try {
       const queryParam = includeDeleted ? '?include_deleted=true' : '';
       const data = await apiCall(`/menu${queryParam}`);
-      return toCamelCase(data);
+      console.log('Raw menu data:', data);
+
+      // Handle different response formats
+      let menuArray = data;
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        // If it's an object, look for common array properties
+        menuArray = data.items || data.menu_items || data.data || [];
+      }
+
+      const converted = toCamelCase(menuArray);
+      console.log('Converted menu items:', converted);
+      return Array.isArray(converted) ? converted : [];
     } catch (error) {
       console.error('Failed to fetch menu:', error);
       return [];
@@ -220,7 +231,10 @@ export const db = {
   async getRestaurantStatus(): Promise<RestaurantStatus> {
     try {
       const data = await apiCall('/restaurant/status');
-      return toCamelCase(data);
+      console.log('Restaurant status from API:', data);
+      const converted = toCamelCase(data);
+      console.log('Restaurant status converted:', converted);
+      return converted;
     } catch (error) {
       console.error('Failed to fetch restaurant status:', error);
       return { isOpen: true };
@@ -229,6 +243,7 @@ export const db = {
 
   async saveRestaurantStatus(status: RestaurantStatus): Promise<void> {
     try {
+      console.log('Saving restaurant status:', status);
       await apiCall('/restaurant/status', {
         method: 'PUT',
         body: JSON.stringify(toSnakeCase(status)),
