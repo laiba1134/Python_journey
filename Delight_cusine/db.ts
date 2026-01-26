@@ -103,9 +103,10 @@ export const db = {
   },
 
   // Menu operations
-  async getMenu(): Promise<MenuItem[]> {
+  async getMenu(includeDeleted: boolean = false): Promise<MenuItem[]> {
     try {
-      const data = await apiCall('/menu');
+      const queryParam = includeDeleted ? '?include_deleted=true' : '';
+      const data = await apiCall(`/menu${queryParam}`);
       return toCamelCase(data);
     } catch (error) {
       console.error('Failed to fetch menu:', error);
@@ -149,6 +150,18 @@ export const db = {
       });
     } catch (error) {
       console.error('Failed to toggle item availability:', error);
+    }
+  },
+
+  async deleteMenuItem(itemId: string): Promise<void> {
+    try {
+      await apiCall(`/menu/${itemId}`, {
+        method: 'DELETE',
+      });
+      console.log(`Successfully deleted item ${itemId}`);
+    } catch (error) {
+      console.error('Failed to delete menu item:', error);
+      throw error;
     }
   },
 

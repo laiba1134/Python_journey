@@ -21,7 +21,8 @@ const App: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const menu = await db.getMenu();
+        // Load menu - include deleted items only if admin
+        const menu = await db.getMenu(currentUser?.role === UserRole.ADMIN);
         setMenuItems(menu);
 
         const fetchedOrders = await db.getOrders();
@@ -38,7 +39,7 @@ const App: React.FC = () => {
     };
 
     loadData();
-  }, []);
+  }, [currentUser?.role]);
 
   // Save restaurant status to backend
   useEffect(() => {
@@ -89,18 +90,19 @@ const App: React.FC = () => {
   };
 
   const handleUpdateMenuItems = async (items: MenuItem[]) => {
-    setMenuItems(items);
     // Batch update all items in the backend
     await db.updateMultipleMenuItems(items);
+
+    // Refresh menu from backend to get the filtered list
+    const updatedMenu = await db.getMenu(currentUser?.role === UserRole.ADMIN);
+    setMenuItems(updatedMenu);
   };
 
   const toggleAvailability = async (itemId: string) => {
     await db.toggleItemAvailability(itemId);
-    const menu = await db.getMenu();
+    const menu = await db.getMenu(currentUser?.role === UserRole.ADMIN);
     setMenuItems(menu);
   };
-
-  const activeMenuItems = menuItems.filter(item => !item.is_deleted);
 
   if (loading) {
     return (
@@ -128,7 +130,7 @@ const App: React.FC = () => {
 
         {view === 'menu' && (
           <MenuPage
-            items={activeMenuItems}
+            items={menuItems}
             onAddToCart={addToCart}
             isClosed={!restaurantStatus.isOpen}
             isLoggedIn={!!currentUser}
