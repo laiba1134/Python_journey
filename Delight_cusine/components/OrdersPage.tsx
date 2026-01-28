@@ -17,7 +17,7 @@ const OrdersPage: React.FC<OrdersPageProps> = ({ orders }) => {
   }
 
   const getStatusColor = (status: OrderStatus) => {
-    switch(status) {
+    switch (status) {
       case OrderStatus.PLACED: return 'text-amber-500';
       case OrderStatus.PREPARING: return 'text-blue-400';
       case OrderStatus.OUT_FOR_DELIVERY: return 'text-purple-400';
@@ -41,7 +41,7 @@ const OrdersPage: React.FC<OrdersPageProps> = ({ orders }) => {
               <p className={`font-black tracking-tight ${getStatusColor(order.status)}`}>{order.status.toUpperCase()}</p>
             </div>
           </div>
-          
+
           <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-white/40 uppercase">Order Details</h3>
@@ -79,15 +79,15 @@ const OrdersPage: React.FC<OrdersPageProps> = ({ orders }) => {
           </div>
 
           <div className="px-8 pb-8">
-             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex">
-                <div className={`h-full bg-amber-500 transition-all duration-1000 ${order.status === OrderStatus.PLACED ? 'w-1/4' : order.status === OrderStatus.PREPARING ? 'w-1/2' : order.status === OrderStatus.OUT_FOR_DELIVERY ? 'w-3/4' : 'w-full'}`}></div>
-             </div>
-             <div className="flex justify-between text-[10px] font-bold text-white/20 mt-2 uppercase tracking-tighter">
-                <span>Placed</span>
-                <span>Prep</span>
-                <span>Transit</span>
-                <span>Done</span>
-             </div>
+            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex">
+              <div className={`h-full bg-amber-500 transition-all duration-1000 ${order.status === OrderStatus.PLACED ? 'w-1/4' : order.status === OrderStatus.PREPARING ? 'w-1/2' : order.status === OrderStatus.OUT_FOR_DELIVERY ? 'w-3/4' : 'w-full'}`}></div>
+            </div>
+            <div className="flex justify-between text-[10px] font-bold text-white/20 mt-2 uppercase tracking-tighter">
+              <span>Placed</span>
+              <span>Prep</span>
+              <span>Transit</span>
+              <span>Done</span>
+            </div>
           </div>
         </div>
       ))}

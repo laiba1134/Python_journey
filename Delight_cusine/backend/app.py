@@ -14,6 +14,7 @@ from routes.menu_routes import menu_bp
 from routes.order_routes import order_bp
 from routes.restaurant_routes import restaurant_bp
 from config.config import Config
+from seed_data import seed_menu_items  # Import seed function
 
 # Load environment variables
 load_dotenv()
@@ -35,7 +36,7 @@ def create_app(config_class=Config):
     CORS(app, resources={
         r"/api/*": {
             "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
             "allow_headers": ["Content-Type", "Authorization"]
         }
     })
@@ -50,10 +51,10 @@ def create_app(config_class=Config):
     app.register_blueprint(order_bp, url_prefix='/api/orders')
     app.register_blueprint(restaurant_bp, url_prefix='/api/restaurant')
 
-    # Create database tables
+    # Create database tables and seed menu items
     with app.app_context():
         db.create_all()
-        # Note: Admin users should be created using create_admin.py script
+        seed_menu_items()  # Seed menu items automatically
         print("✓ Database tables created")
         print("💡 To create an admin user, run: python create_admin.py")
 

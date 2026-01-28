@@ -49,7 +49,7 @@ const CartPage: React.FC<CartPageProps> = ({ cart, onRemove, onCheckout, isClose
       <div className="space-y-6">
         <div className="glass-panel p-6 rounded-3xl space-y-6 sticky top-24">
           <h2 className="text-xl font-bold">Order Summary</h2>
-          
+
           <div className="space-y-3">
             <div className="flex justify-between text-white/60">
               <span>Subtotal</span>
@@ -70,7 +70,7 @@ const CartPage: React.FC<CartPageProps> = ({ cart, onRemove, onCheckout, isClose
             <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Order Mode</label>
             <div className="flex gap-2">
               {[OrderMode.DELIVERY, OrderMode.PICKUP].map(m => (
-                <button 
+                <button
                   key={m}
                   onClick={() => setMode(m)}
                   className={`flex-grow py-2 rounded-lg text-sm font-bold border ${mode === m ? 'bg-amber-500 border-amber-500 text-black' : 'border-white/10 text-white/60'}`}
@@ -85,7 +85,7 @@ const CartPage: React.FC<CartPageProps> = ({ cart, onRemove, onCheckout, isClose
             <label className="text-xs font-bold text-white/40 uppercase tracking-widest">Payment Method</label>
             <div className="flex gap-2">
               {[PaymentMethod.CARD, PaymentMethod.COD].map(p => (
-                <button 
+                <button
                   key={p}
                   onClick={() => setPayment(p)}
                   className={`flex-grow py-2 rounded-lg text-sm font-bold border ${payment === p ? 'bg-amber-500 border-amber-500 text-black' : 'border-white/10 text-white/60'}`}
@@ -96,7 +96,7 @@ const CartPage: React.FC<CartPageProps> = ({ cart, onRemove, onCheckout, isClose
             </div>
           </div>
 
-          <button 
+          <button
             disabled={isClosed}
             onClick={() => onCheckout(payment, mode)}
             className={`w-full py-4 rounded-2xl font-black text-lg transition-all shadow-xl shadow-amber-500/20 ${isClosed ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'honey-gradient text-black hover:scale-[1.02]'}`}

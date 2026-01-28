@@ -74,8 +74,8 @@ const MenuPage: React.FC<MenuPageProps> = ({ items, onAddToCart, isClosed, isLog
               key={category}
               onClick={() => setSelectedCategory(category)}
               className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${selectedCategory === category
-                  ? 'honey-gradient text-black shadow-lg'
-                  : 'bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/10'
+                ? 'honey-gradient text-black shadow-lg'
+                : 'bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/10'
                 }`}
             >
               {category}
@@ -98,8 +98,8 @@ const MenuPage: React.FC<MenuPageProps> = ({ items, onAddToCart, isClosed, isLog
             <div
               key={item.id}
               className={`glass-panel rounded-3xl overflow-hidden border border-white/10 transition-all ${unavailable
-                  ? 'opacity-60 cursor-not-allowed'
-                  : 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/10'
+                ? 'opacity-60 cursor-not-allowed'
+                : 'hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/10'
                 }`}
             >
               {/* Item Image */}
@@ -149,8 +149,8 @@ const MenuPage: React.FC<MenuPageProps> = ({ items, onAddToCart, isClosed, isLog
                   onClick={() => handleAddToCart(item)}
                   disabled={unavailable}
                   className={`w-full py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all ${unavailable
-                      ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5'
-                      : 'honey-gradient text-black hover:scale-105 active:scale-95 shadow-lg shadow-amber-500/20 border border-amber-500/50'
+                    ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5'
+                    : 'honey-gradient text-black hover:scale-105 active:scale-95 shadow-lg shadow-amber-500/20 border border-amber-500/50'
                     }`}
                 >
                   {unavailable
