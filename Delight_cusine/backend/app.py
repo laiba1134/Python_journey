@@ -14,8 +14,6 @@ from routes.menu_routes import menu_bp
 from routes.order_routes import order_bp
 from routes.restaurant_routes import restaurant_bp
 from config.config import Config
-from seed_data import seed_all
-# Import the seed function
 
 # Load environment variables
 load_dotenv()
@@ -52,10 +50,12 @@ def create_app(config_class=Config):
     app.register_blueprint(order_bp, url_prefix='/api/orders')
     app.register_blueprint(restaurant_bp, url_prefix='/api/restaurant')
 
-    # Create database tables and seed data
+    # Create database tables
     with app.app_context():
         db.create_all()
-        seed_all()  # Seed all initial data
+        # Note: Admin users should be created using create_admin.py script
+        print("✓ Database tables created")
+        print("💡 To create an admin user, run: python create_admin.py")
 
     @app.route('/api/health', methods=['GET'])
     def health_check():
@@ -63,7 +63,6 @@ def create_app(config_class=Config):
         return {'status': 'healthy', 'service': 'Delight Cuisine API'}, 200
 
     return app
-
 
 if __name__ == '__main__':
     app = create_app()

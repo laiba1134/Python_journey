@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserRole } from '../types';
+import { db } from '../db';
 
 interface LoginPageProps {
   onLogin: (username: string, password: string) => Promise<void>;
@@ -7,7 +7,6 @@ interface LoginPageProps {
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [role, setRole] = useState<UserRole>(UserRole.CUSTOMER);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,28 +20,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
     try {
       if (isRegistering) {
-        if (role === UserRole.ADMIN) {
-          setError('Administrators cannot be registered through this portal.');
-          setLoading(false);
-          return;
-        }
+        // Register new customer
+        const user = await db.register(username, email, password, 'customer');
 
-        // Call register API
-        const response = await fetch('http://localhost:8000/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username,
-            email,
-            password,
-            role: UserRole.CUSTOMER
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.detail || 'Registration failed');
+        if (!user) {
+          setError('Registration failed. Please try again.');
           setLoading(false);
           return;
         }
@@ -53,33 +35,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         setEmail('');
         setPassword('');
       } else {
-        // Login - verify role matches
-        const response = await fetch('http://localhost:8000/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: email || username,
-            password,
-            requested_role: role // Send requested role to backend
-          })
-        });
+        // Login - backend determines role
+        const user = await db.login(email || username, password);
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.detail || 'Login failed');
+        if (!user) {
+          setError('Invalid credentials. Please check your email and password.');
           setLoading(false);
           return;
         }
 
-        // Double check: verify role matches
-        if (data.role !== role) {
-          setError('Access denied. You do not have permission for this role.');
-          setLoading(false);
-          return;
-        }
-
-        // Call onLogin which will set the user
+        // Call onLogin which will redirect based on role
         await onLogin(email || username, password);
       }
     } catch (err) {
@@ -114,7 +79,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             LOGIN
           </button>
           <button
-            onClick={() => { setIsRegistering(true); setRole(UserRole.CUSTOMER); setError(''); }}
+            onClick={() => { setIsRegistering(true); setError(''); }}
             className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${isRegistering ? 'bg-amber-500 text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
           >
             REGISTER
@@ -127,33 +92,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               {error}
             </div>
           )}
-
-          {/* Role Selection */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Select Identity</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setRole(UserRole.CUSTOMER)}
-                className={`py-3 rounded-xl border text-[10px] font-black transition-all ${role === UserRole.CUSTOMER ? 'border-amber-500 honey-text bg-amber-500/5' : 'border-white/5 bg-white/5 text-white/30'}`}
-              >
-                CUSTOMER
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if(isRegistering) {
-                    setError('Admins cannot register.');
-                  } else {
-                    setRole(UserRole.ADMIN);
-                  }
-                }}
-                className={`py-3 rounded-xl border text-[10px] font-black transition-all ${role === UserRole.ADMIN ? 'border-amber-500 honey-text bg-amber-500/5' : 'border-white/5 bg-white/5 text-white/30'} ${isRegistering ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                ADMIN
-              </button>
-            </div>
-          </div>
 
           {/* Username field (only for registration) */}
           {isRegistering && (
@@ -172,13 +110,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">
-              {isRegistering ? 'Email Address' : 'Email or Username'}
+              {isRegistering ? 'Email Address' : 'Email'}
             </label>
             <input
               type={isRegistering ? "email" : "text"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={role === UserRole.ADMIN ? "admin" : (isRegistering ? "your@email.com" : "email or username")}
+              placeholder={isRegistering ? "your@email.com" : "your@email.com"}
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-amber-500 transition-all text-sm placeholder:text-white/10"
               required
             />
@@ -206,7 +144,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </form>
 
         <p className="text-center text-[10px] text-white/20 font-bold uppercase tracking-widest">
-          {role === UserRole.ADMIN ? 'Restricted Access for Staff' : 'Encryption Active • Delight OS v2.0'}
+          Encryption Active • Delight OS v2.0
         </p>
       </div>
     </div>

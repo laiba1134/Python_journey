@@ -1,16 +1,18 @@
+// User types
 export enum UserRole {
-  ADMIN = 'admin',
-  CUSTOMER = 'customer'
+  ADMIN = 'ADMIN',
+  CUSTOMER = 'CUSTOMER'
 }
 
 export interface User {
-  id: string;
-  username: string;
+  id: number;
   email: string;
-  role: UserRole | string; // Allow both enum and string
-  createdAt: string;
+  name: string;
+  role: string;
+  createdAt?: string;
 }
 
+// Menu types
 export interface MenuItem {
   id: string;
   name: string;
@@ -19,15 +21,19 @@ export interface MenuItem {
   category: string;
   image: string;
   available: boolean;
-  is_deleted: boolean;
+  is_deleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+// Cart types
 export interface CartItem {
   id: string;
   menuItem: MenuItem;
   quantity: number;
 }
 
+// Order types
 export enum OrderStatus {
   PLACED = "PLACED",
   PREPARING = "PREPARING",
@@ -37,28 +43,43 @@ export enum OrderStatus {
 }
 
 export enum PaymentMethod {
-  CASH = 'cash',
-  CARD = 'card',
-  ONLINE = 'online'
+  CASH = "Cash on Delivery",
+  CARD = "Credit/Debit Card",
+  ONLINE = "Online Payment"
 }
 
 export enum OrderMode {
-  DINE_IN = 'dine_in',
-  TAKEAWAY = 'takeaway',
-  DELIVERY = 'delivery'
+  DELIVERY = "Delivery",
+  PICKUP = "Pickup"
+}
+
+export interface OrderItem {
+  id: string;
+  quantity: number;
+  menuItem: {
+    id: string;
+    name: string;
+    price: number;
+  };
 }
 
 export interface Order {
   id: string;
-  userId: string;
-  items: CartItem[];
-  total: number;
+  userId?: number;
   status: OrderStatus;
-  paymentMethod: PaymentMethod;
-  orderMode: OrderMode;
+  total: number;
   timestamp: string;
+  orderMode: string;
+  paymentMethod: string;
+  deliveryAddress?: string;
+  notes?: string;
+  items: OrderItem[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+// Restaurant status
 export interface RestaurantStatus {
   isOpen: boolean;
+  message?: string;
 }

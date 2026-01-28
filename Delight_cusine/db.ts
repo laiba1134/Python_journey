@@ -3,6 +3,25 @@ import { User, MenuItem, Order, RestaurantStatus, OrderStatus } from './types';
 // Flask backend API URL
 const API_BASE_URL = 'http://localhost:5000/api';
 
+// Store auth token
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+  if (token) {
+    localStorage.setItem('auth_token', token);
+  } else {
+    localStorage.removeItem('auth_token');
+  }
+}
+
+export function getAuthToken(): string | null {
+  if (!authToken) {
+    authToken = localStorage.getItem('auth_token');
+  }
+  return authToken;
+}
+
 // Helper to handle camelCase to snake_case conversion
 function toSnakeCase(obj: any): any {
   if (Array.isArray(obj)) {
@@ -39,22 +58,30 @@ function toCamelCase(obj: any): any {
 // Helper function for API calls
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    // Add auth token if available
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Request failed' }));
       console.error('API Error:', error);
-      throw new Error(error.detail || 'Request failed');
+      throw new Error(error.detail || error.message || 'Request failed');
     }
 
     const data = await response.json();
-    console.log('API Response:', data); // Debug log
+    console.log('API Response:', data);
     return data;
   } catch (error) {
     console.error('Fetch Error:', error);
@@ -64,43 +91,65 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 
 export const db = {
   // Authentication
-  async login(username: string, password: string): Promise<User | null> {
+  async login(email: string, password: string): Promise<User | null> {
     try {
-      console.log('Attempting login with:', { username, password: '***' }); // Debug log
+      console.log('Attempting login with:', { email });
+
       const response = await apiCall('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({
+          email,
+          password
+        }),
       });
-      console.log('Raw API response:', response); // Debug log
 
-      // Convert snake_case to camelCase
-      const user = toCamelCase(response);
-      console.log('Converted user:', user); // Debug log
-      console.log('User role:', user.role, 'Type:', typeof user.role); // Debug log
+      console.log('Login response:', response);
 
-      return user;
+      // Store the token
+      if (response.access_token) {
+        setAuthToken(response.access_token);
+      }
+
+      // Return the user object
+      if (response.user) {
+        return {
+          ...response.user,
+          role: response.role || response.user.role // Use top-level role if available
+        };
+      }
+
+      return null;
     } catch (error) {
       console.error('Login failed:', error);
-      alert('Login failed: ' + (error as Error).message);
       return null;
     }
   },
 
   async register(username: string, email: string, password: string, role: string = 'customer'): Promise<User | null> {
     try {
-      console.log('Attempting registration with:', { username, email, role }); // Debug log
-      const user = await apiCall('/auth/register', {
+      console.log('Attempting registration with:', { username, email, role });
+      const response = await apiCall('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ username, email, password, role }),
       });
-      console.log('Registration successful:', user); // Debug log
-      // Convert snake_case to camelCase
-      return toCamelCase(user);
+
+      console.log('Registration response:', response);
+
+      // Store the token
+      if (response.access_token) {
+        setAuthToken(response.access_token);
+      }
+
+      // Return the user object
+      return response.user || null;
     } catch (error) {
       console.error('Registration failed:', error);
-      alert('Registration failed: ' + (error as Error).message);
       return null;
     }
+  },
+
+  logout() {
+    setAuthToken(null);
   },
 
   // Menu operations
@@ -113,55 +162,90 @@ export const db = {
       // Handle different response formats
       let menuArray = data;
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        // If it's an object, look for common array properties
         menuArray = data.items || data.menu_items || data.data || [];
       }
 
       const converted = toCamelCase(menuArray);
-      console.log('Converted menu items:', converted);
-      return Array.isArray(converted) ? converted : [];
+
+      // Ensure all IDs are strings
+      const withStringIds = Array.isArray(converted)
+        ? converted.map((item: any) => ({
+            ...item,
+            id: String(item.id)
+          }))
+        : [];
+
+      console.log('Converted menu items:', withStringIds);
+      return withStringIds;
     } catch (error) {
       console.error('Failed to fetch menu:', error);
       return [];
     }
   },
 
+  async addMenuItem(item: Omit<MenuItem, 'id'>): Promise<void> {
+    try {
+      await apiCall('/menu', {
+        method: 'POST',
+        body: JSON.stringify(toSnakeCase(item)),
+      });
+    } catch (error) {
+      console.error('Failed to add menu item:', error);
+      throw error;
+    }
+  },
+
   async updateMenuItem(item: MenuItem): Promise<void> {
     try {
-      await apiCall(`/menu/${item.id}`, {
+      // Convert string ID to number for API call if needed
+      const itemId = typeof item.id === 'string' ? item.id : String(item.id);
+
+      await apiCall(`/menu/${itemId}`, {
         method: 'PUT',
         body: JSON.stringify(toSnakeCase(item)),
       });
     } catch (error) {
       console.error('Failed to update menu item:', error);
+      throw error;
     }
   },
 
   async updateMultipleMenuItems(items: MenuItem[]): Promise<void> {
     try {
-      console.log('Updating multiple items:', items.length);
-      console.log('Items being sent (before conversion):', items);
+      console.log('Updating multiple menu items:', items.length);
 
-      // Don't convert - send items as-is since MenuItem already has the right format
-      const response = await apiCall('/menu/batch', {
-        method: 'PUT',
-        body: JSON.stringify(items),
+      // Update each item individually since we don't have a batch endpoint
+      const updatePromises = items.map(item => {
+        const itemId = typeof item.id === 'string' ? item.id : String(item.id);
+        return apiCall(`/menu/${itemId}`, {
+          method: 'PUT',
+          body: JSON.stringify(toSnakeCase(item)),
+        });
       });
 
-      console.log('Batch update response:', response);
+      await Promise.all(updatePromises);
+      console.log('All items updated successfully');
     } catch (error) {
-      console.error('Failed to batch update menu items:', error);
+      console.error('Failed to update multiple menu items:', error);
       throw error;
     }
   },
 
   async toggleItemAvailability(itemId: string): Promise<void> {
     try {
-      await apiCall(`/menu/${itemId}/toggle`, {
-        method: 'PATCH',
-      });
+      // Get the current item
+      const items = await this.getMenu(true);
+      const item = items.find(i => String(i.id) === String(itemId));
+
+      if (item) {
+        await apiCall(`/menu/${itemId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ available: !item.available }),
+        });
+      }
     } catch (error) {
       console.error('Failed to toggle item availability:', error);
+      throw error;
     }
   },
 
@@ -180,30 +264,49 @@ export const db = {
   // Order operations
   async getOrders(userId?: string): Promise<Order[]> {
     try {
-      const queryParam = userId ? `?user_id=${userId}` : '';
-      const data = await apiCall(`/orders${queryParam}`);
-      return toCamelCase(data);
+      const endpoint = userId ? `/orders?user_id=${userId}` : '/orders';
+      const data = await apiCall(endpoint);
+
+      // Handle response format
+      let ordersArray = data;
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        ordersArray = data.orders || data.data || [];
+      }
+
+      // Ensure all IDs are strings
+      const withStringIds = Array.isArray(ordersArray)
+        ? ordersArray.map((order: any) => ({
+            ...order,
+            id: String(order.id),
+            items: order.items?.map((item: any) => ({
+              ...item,
+              id: String(item.id),
+              menuItem: {
+                ...item.menuItem,
+                id: String(item.menuItem?.id || item.menu_item_id)
+              }
+            })) || []
+          }))
+        : [];
+
+      return withStringIds;
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       return [];
     }
   },
 
-  async saveOrder(order: Order): Promise<void> {
+  async saveOrder(order: any): Promise<void> {
     try {
-      // Transform order items to match backend schema
       const orderData = {
-        user_id: order.userId,
-        items: order.items.map(item => ({
-          id: item.id,
+        items: order.items.map((item: any) => ({
           menu_item_id: item.menuItem.id,
           quantity: item.quantity,
-          price_at_time: item.menuItem.price,
         })),
-        total: order.total,
-        status: order.status,
-        payment_method: order.paymentMethod,
-        order_mode: order.orderMode,
+        delivery_address: order.deliveryAddress || order.delivery_address,
+        notes: order.notes || '',
+        order_mode: order.orderMode || order.order_mode || 'Delivery',
+        payment_method: order.paymentMethod || order.payment_method || 'Cash on Delivery',
       };
 
       await apiCall('/orders', {
@@ -224,32 +327,49 @@ export const db = {
       });
     } catch (error) {
       console.error('Failed to update order status:', error);
+      throw error;
     }
   },
 
   // Restaurant status operations
-  async getRestaurantStatus(): Promise<RestaurantStatus> {
+  async getRestaurantStatus(): Promise<any> {
     try {
       const data = await apiCall('/restaurant/status');
       console.log('Restaurant status from API:', data);
-      const converted = toCamelCase(data);
-      console.log('Restaurant status converted:', converted);
-      return converted;
+      return {
+        isOpen: data.isOpen ?? true,
+        message: data.message || ''
+      };
     } catch (error) {
       console.error('Failed to fetch restaurant status:', error);
-      return { isOpen: true };
+      return { isOpen: true, message: '' };
     }
   },
 
-  async saveRestaurantStatus(status: RestaurantStatus): Promise<void> {
+  async saveRestaurantStatus(status: any): Promise<void> {
     try {
       console.log('Saving restaurant status:', status);
       await apiCall('/restaurant/status', {
         method: 'PUT',
-        body: JSON.stringify(toSnakeCase(status)),
+        body: JSON.stringify({
+          is_open: status.isOpen,
+          message: status.message || ''
+        }),
       });
     } catch (error) {
       console.error('Failed to save restaurant status:', error);
+      throw error;
+    }
+  },
+
+  async toggleRestaurantStatus(): Promise<void> {
+    try {
+      await apiCall('/restaurant/toggle', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Failed to toggle restaurant status:', error);
+      throw error;
     }
   },
 };

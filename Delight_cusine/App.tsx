@@ -8,6 +8,12 @@ import AdminDashboard from './components/AdminDashboard';
 import CartPage from './components/CartPage';
 import OrdersPage from './components/OrdersPage';
 
+// Helper to check if user is admin (handles both 'admin' and 'ADMIN')
+const isAdminUser = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.role?.toUpperCase() === 'ADMIN';
+};
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [view, setView] = useState<'menu' | 'login' | 'cart' | 'admin' | 'orders'>('menu');
@@ -22,7 +28,7 @@ const App: React.FC = () => {
     const loadData = async () => {
       try {
         // Load menu - include deleted items only if admin
-        const menu = await db.getMenu(currentUser?.role === UserRole.ADMIN);
+        const menu = await db.getMenu(isAdminUser(currentUser));
         setMenuItems(menu);
 
         const fetchedOrders = await db.getOrders();
@@ -94,13 +100,13 @@ const App: React.FC = () => {
     await db.updateMultipleMenuItems(items);
 
     // Refresh menu from backend to get the filtered list
-    const updatedMenu = await db.getMenu(currentUser?.role === UserRole.ADMIN);
+    const updatedMenu = await db.getMenu(isAdminUser(currentUser));
     setMenuItems(updatedMenu);
   };
 
   const toggleAvailability = async (itemId: string) => {
     await db.toggleItemAvailability(itemId);
-    const menu = await db.getMenu(currentUser?.role === UserRole.ADMIN);
+    const menu = await db.getMenu(isAdminUser(currentUser));
     setMenuItems(menu);
   };
 
@@ -141,19 +147,10 @@ const App: React.FC = () => {
         {view === 'login' && (
           <LoginPage onLogin={async (usernameOrEmail, password) => {
             const user = await db.login(usernameOrEmail, password);
-            console.log('=== LOGIN DEBUG ===');
-            console.log('Logged in user:', user);
-            console.log('User role:', user?.role);
-            console.log('Role type:', typeof user?.role);
-            console.log('UserRole.ADMIN:', UserRole.ADMIN);
-            console.log('Are they equal?', user?.role === UserRole.ADMIN);
-            console.log('String comparison:', (user?.role as any) === 'admin');
-            console.log('==================');
 
             if (user) {
               setCurrentUser(user);
-              const isAdmin = user.role === UserRole.ADMIN || (user.role as any) === 'admin';
-              setView(isAdmin ? 'admin' : 'menu');
+              setView(isAdminUser(user) ? 'admin' : 'menu');
             } else {
               alert('Invalid credentials or access denied.');
             }
@@ -165,12 +162,12 @@ const App: React.FC = () => {
         )}
 
         {view === 'orders' && (
-          <OrdersPage orders={currentUser?.role === UserRole.ADMIN ? orders : orders.filter(o => o.userId === currentUser?.id)} />
+          <OrdersPage orders={isAdminUser(currentUser) ? orders : orders.filter(o => o.userId === currentUser?.id)} />
         )}
 
         {view === 'admin' && (
           <>
-            {(currentUser?.role === UserRole.ADMIN || String(currentUser?.role) === 'admin') ? (
+            {isAdminUser(currentUser) ? (
               <AdminDashboard
                 items={menuItems}
                 orders={orders}
@@ -185,7 +182,6 @@ const App: React.FC = () => {
                 <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-6 rounded-2xl inline-block">
                   <h3 className="text-2xl font-black mb-2">ACCESS DENIED</h3>
                   <p className="text-sm">You do not have permission to access the admin dashboard.</p>
-                  <p className="text-xs mt-2 opacity-50">Current role: {currentUser?.role || 'none'}</p>
                   <button
                     onClick={() => setView('menu')}
                     className="mt-4 honey-gradient text-black px-6 py-2 rounded-xl font-black text-xs"
