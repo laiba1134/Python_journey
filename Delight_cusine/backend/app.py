@@ -5,6 +5,7 @@ Main application entry point
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
+load_dotenv()
 import os
 
 from extensions.db import db
@@ -17,7 +18,7 @@ from config.config import Config
 from seed_data import seed_menu_items  # Import seed function
 
 # Load environment variables
-load_dotenv()
+
 
 def create_app(config_class=Config):
     """

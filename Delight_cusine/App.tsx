@@ -120,13 +120,16 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a0a]">
-      <Navbar
-        user={currentUser}
+        <Navbar
+       user={currentUser}
         onNavigate={setView}
-        onLogout={() => { setCurrentUser(null); setView('menu'); }}
-        cartCount={cart.reduce((a, b) => a + b.quantity, 0)}
-      />
-
+        onLogout={() => {
+        db.logout();  
+        setCurrentUser(null);
+        setView('menu');
+      }}
+      cartCount={cart.reduce((a, b) => a + b.quantity, 0)}
+    />
       <main className="flex-grow pt-24 container mx-auto px-4 pb-12">
         {!restaurantStatus.isOpen && view !== 'admin' && (
           <div className="bg-amber-900/20 border border-amber-500/50 text-amber-500 p-4 rounded-2xl mb-8 text-center text-[10px] font-black tracking-[0.2em] animate-pulse uppercase">
@@ -145,8 +148,8 @@ const App: React.FC = () => {
         )}
 
         {view === 'login' && (
-          <LoginPage onLogin={async (usernameOrEmail, password) => {
-            const user = await db.login(usernameOrEmail, password);
+          <LoginPage onLogin={async (nameOrEmail, password) => {
+            const user = await db.login(nameOrEmail, password);
 
             if (user) {
               setCurrentUser(user);

@@ -19,9 +19,13 @@ class Config:
 
     # JWT Configuration
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'dev-jwt-secret-please-change')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
-        seconds=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600))
-    )
+
+    # Short-lived access token (15 minutes) for security
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+
+    # Long-lived refresh token (30 days) for convenience
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+
     JWT_TOKEN_LOCATION = ['headers']
     JWT_HEADER_NAME = 'Authorization'
     JWT_HEADER_TYPE = 'Bearer'

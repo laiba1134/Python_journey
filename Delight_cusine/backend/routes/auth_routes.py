@@ -3,7 +3,12 @@ Authentication routes module
 Handles user registration, login, and JWT token management
 """
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,  # ADD THIS LINE
+    jwt_required,
+    get_jwt_identity
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions.db import db
 from models.user import User
@@ -17,16 +22,6 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     """
     Register a new user
-
-    Required JSON fields:
-        - email: User's email address
-        - password: User's password
-        - name: User's full name
-
-    Returns:
-        201: User created successfully
-        400: Validation error
-        409: User already exists
     """
     try:
         data = request.get_json()
@@ -44,18 +39,20 @@ def register():
             email=data['email'],
             password=hashed_password,
             name=data['name'],
-            role='customer'  # Default role
+            role='customer'
         )
 
         db.session.add(new_user)
         db.session.commit()
 
-        # Generate access token
+        # Generate both tokens
         access_token = create_access_token(identity=new_user.id)
+        refresh_token = create_refresh_token(identity=new_user.id)
 
         return jsonify({
             'message': 'User registered successfully',
             'access_token': access_token,
+            'refresh_token': refresh_token,
             'user': new_user.to_dict()
         }), 201
 
@@ -71,15 +68,7 @@ def register():
 @validate_request_data(['email', 'password'])
 def login():
     """
-    Authenticate user and return JWT token
-
-    Required JSON fields:
-        - email: User's email address
-        - password: User's password
-
-    Returns:
-        200: Login successful
-        401: Invalid credentials
+    Authenticate user and return JWT tokens
     """
     try:
         data = request.get_json()
@@ -94,12 +83,14 @@ def login():
                 'message': 'Invalid email or password'
             }), 401
 
-        # Generate access token
+        # Generate both access and refresh tokens
         access_token = create_access_token(identity=user.id)
+        refresh_token = create_refresh_token(identity=user.id)
 
         return jsonify({
             'message': 'Login successful',
             'access_token': access_token,
+            'refresh_token': refresh_token,
             'user': user.to_dict()
         }), 200
 
@@ -110,15 +101,38 @@ def login():
         }), 500
 
 
+@auth_bp.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    """
+    Refresh access token using refresh token
+
+    Returns:
+        200: New access token
+        401: Invalid refresh token
+    """
+    try:
+        current_user_id = get_jwt_identity()
+
+        # Generate new access token
+        access_token = create_access_token(identity=current_user_id)
+
+        return jsonify({
+            'access_token': access_token
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'error': 'refresh_failed',
+            'message': str(e)
+        }), 500
+
+
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
     """
     Get current authenticated user's information
-
-    Returns:
-        200: User information
-        404: User not found
     """
     try:
         current_user_id = get_jwt_identity()

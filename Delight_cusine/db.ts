@@ -3,10 +3,17 @@ import { User, MenuItem, Order, RestaurantStatus, OrderStatus } from './types';
 // Flask backend API URL
 const API_BASE_URL = 'http://localhost:5000/api';
 
-// Store auth token
+// Store auth token - use a simple in-memory variable with localStorage backup
 let authToken: string | null = null;
 
+// Initialize token from localStorage on module load
+if (typeof window !== 'undefined') {
+  authToken = localStorage.getItem('auth_token');
+  console.log('Token loaded from localStorage:', authToken ? 'Found' : 'Not found');
+}
+
 export function setAuthToken(token: string | null) {
+  console.log('Setting auth token:', token ? 'Token set' : 'Token cleared');
   authToken = token;
   if (token) {
     localStorage.setItem('auth_token', token);
@@ -16,9 +23,11 @@ export function setAuthToken(token: string | null) {
 }
 
 export function getAuthToken(): string | null {
-  if (!authToken) {
+  // Always check localStorage in case it was updated
+  if (!authToken && typeof window !== 'undefined') {
     authToken = localStorage.getItem('auth_token');
   }
+  console.log('Getting auth token:', authToken ? 'Token exists' : 'No token');
   return authToken;
 }
 
@@ -67,7 +76,16 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     const token = getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      console.log('✅ Auth token added to request');
+    } else {
+      console.warn('⚠️ No auth token available for request to:', endpoint);
     }
+
+    console.log('API Call:', {
+      endpoint,
+      method: options.method || 'GET',
+      hasToken: !!token
+    });
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
@@ -77,6 +95,8 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Request failed' }));
       console.error('API Error:', error);
+      console.error('Status:', response.status);
+      console.error('Endpoint:', endpoint);
       throw new Error(error.detail || error.message || 'Request failed');
     }
 
@@ -93,7 +113,7 @@ export const db = {
   // Authentication
   async login(email: string, password: string): Promise<User | null> {
     try {
-      console.log('Attempting login with:', { email });
+      console.log('🔐 Attempting login with:', { email });
 
       const response = await apiCall('/auth/login', {
         method: 'POST',
@@ -103,24 +123,30 @@ export const db = {
         }),
       });
 
-      console.log('Login response:', response);
+      console.log('✅ Login successful, response:', response);
 
-      // Store the token
+      // Store the token FIRST
       if (response.access_token) {
+        console.log('💾 Storing auth token...');
         setAuthToken(response.access_token);
+        console.log('✅ Token stored successfully');
+      } else {
+        console.error('⚠️ No access token in response!');
       }
 
       // Return the user object
       if (response.user) {
-        return {
+        const user = {
           ...response.user,
-          role: response.role || response.user.role // Use top-level role if available
+          role: response.role || response.user.role
         };
+        console.log('👤 User logged in:', user);
+        return user;
       }
 
       return null;
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed:', error);
       return null;
     }
   },
@@ -149,7 +175,16 @@ export const db = {
   },
 
   logout() {
+    console.log('🚪 Logging out, clearing token');
     setAuthToken(null);
+  },
+
+  // Check if user is logged in
+  isAuthenticated(): boolean {
+    const token = getAuthToken();
+    const isAuth = !!token;
+    console.log('🔍 Checking auth status:', isAuth ? 'Authenticated' : 'Not authenticated');
+    return isAuth;
   },
 
   // Menu operations
@@ -170,9 +205,9 @@ export const db = {
       // Ensure all IDs are strings
       const withStringIds = Array.isArray(converted)
         ? converted.map((item: any) => ({
-            ...item,
-            id: String(item.id)
-          }))
+          ...item,
+          id: String(item.id)
+        }))
         : [];
 
       console.log('Converted menu items:', withStringIds);
@@ -276,17 +311,17 @@ export const db = {
       // Ensure all IDs are strings
       const withStringIds = Array.isArray(ordersArray)
         ? ordersArray.map((order: any) => ({
-            ...order,
-            id: String(order.id),
-            items: order.items?.map((item: any) => ({
-              ...item,
-              id: String(item.id),
-              menuItem: {
-                ...item.menuItem,
-                id: String(item.menuItem?.id || item.menu_item_id)
-              }
-            })) || []
-          }))
+          ...order,
+          id: String(order.id),
+          items: order.items?.map((item: any) => ({
+            ...item,
+            id: String(item.id),
+            menuItem: {
+              ...item.menuItem,
+              id: String(item.menuItem?.id || item.menu_item_id)
+            }
+          })) || []
+        }))
         : [];
 
       return withStringIds;

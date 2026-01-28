@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { db } from '../db';
 
 interface LoginPageProps {
-  onLogin: (username: string, password: string) => Promise<void>;
+  onLogin: (name: string, password: string) => Promise<void>;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [username, setUsername] = useState('');
+  const [name, setname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +21,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     try {
       if (isRegistering) {
         // Register new customer
-        const user = await db.register(username, email, password, 'customer');
+        const user = await db.register(name, email, password, 'customer');
 
         if (!user) {
           setError('Registration failed. Please try again.');
@@ -31,12 +31,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         alert('Registration successful! Please login.');
         setIsRegistering(false);
-        setUsername('');
+        setname('');
         setEmail('');
         setPassword('');
       } else {
         // Login - backend determines role
-        const user = await db.login(email || username, password);
+        const user = await db.login(email || name, password);
 
         if (!user) {
           setError('Invalid credentials. Please check your email and password.');
@@ -45,7 +45,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         }
 
         // Call onLogin which will redirect based on role
-        await onLogin(email || username, password);
+        await onLogin(email || name, password);
       }
     } catch (err) {
       setError('Connection error. Please try again.');
@@ -96,11 +96,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           {/* Username field (only for registration) */}
           {isRegistering && (
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Username</label>
+              <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">name</label>
               <input
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={name}
+                onChange={(e) => setname(e.target.value)}
                 placeholder="johndoe"
                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-amber-500 transition-all text-sm placeholder:text-white/10"
                 required={isRegistering}
