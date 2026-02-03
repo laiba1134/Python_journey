@@ -123,19 +123,32 @@ def create_order():
 
 
 @order_bp.route('', methods=['GET'])
-@jwt_required()
-def get_user_orders():
+def get_user_orders_public():
     """
-    Get current user's orders
+    Get orders - requires authentication
+    If not authenticated, returns empty array
 
     Query parameters:
         - status: Filter by status (optional)
 
     Returns:
-        200: List of user's orders
+        200: List of user's orders or empty array
     """
+    from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+    from flask_jwt_extended.exceptions import NoAuthorizationError
+
     try:
+        # Try to get JWT token
+        verify_jwt_in_request(optional=True)
         current_user_id = get_jwt_identity()
+
+        if not current_user_id:
+            # Not logged in - return empty array
+            return jsonify({
+                'orders': [],
+                'count': 0
+            }), 200
+
         query = Order.query.filter_by(user_id=current_user_id)
 
         # Apply status filter if provided
@@ -151,10 +164,11 @@ def get_user_orders():
         }), 200
 
     except Exception as e:
+        # On any error, return empty array
         return jsonify({
-            'error': 'fetch_failed',
-            'message': str(e)
-        }), 500
+            'orders': [],
+            'count': 0
+        }), 200
 
 
 @order_bp.route('/<int:order_id>', methods=['GET'])

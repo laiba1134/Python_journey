@@ -20,7 +20,7 @@ restaurant_status = {
 @restaurant_bp.route('/status', methods=['GET'])
 def get_status():
     """
-    Get restaurant status (public endpoint)
+    Get restaurant status (public endpoint - NO AUTH REQUIRED)
 
     Returns:
         200: Restaurant status
